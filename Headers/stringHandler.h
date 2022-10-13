@@ -84,31 +84,76 @@ typedef struct commands* Commands;
  * ###################################################################################
  */
 
+/* ###################################################################################
+ *                                 MAIN FUNCTIONS
+ * ###################################################################################
+ */
+
+/**
+ * @param string In this section you have to pass the address of a pointer with no memory allocated that points to NULL.
+ * @param DIM This is the maximum dimension of input that this function is going to store.
+ * @param fixedDim Here you can specify if the dimension is fixed or the input may be smaller.
+ * @param conditions This is the parameter where you have to specify the conditions of an acceptable input.
+ * @param message This is the message that will be shown to the user when he has to give the input.
+ *
+ * @return This function has no return but it modify the pointer that you passed in the first parameter slot and stores\n
+ * in it user's input.
+ */
+void input(char **string, int DIM, _Bool FixedDim, const char conditions[], const char message[]);
+
+_Bool sString (char **getIns, const char *cmds);
+
+void freeIt(char **var);
+
+/* ###################################################################################
+ *                                 MAIN FUNCTIONS </>
+ * ###################################################################################
+ */
+
+/* ###################################################################################
+ *                                 INTEGERS HANDLERS
+ * ###################################################################################
+ */
+
 int numConverter(char num);
-int xtdNumConverter(const char nums[] , _Bool skipchars);
+int toInteger(const char nums[] , _Bool skipchars);
+char *numToString(int num);
+void bubbleSortInt(int *array, int dimension);
+
+/* ###################################################################################
+ *                                 INTEGERS HANDLERS </>
+ * ###################################################################################
+ */
+
+/* ###################################################################################
+ *                                 STRINGS HANDLERS
+ * ###################################################################################
+ */
+
 _Bool strComp(const char string[], const char string_[]);
+_Bool strCompNCS(const char string[], const char string_[]);
+char *charToString(char _char);
+match *contains(char *_chars, char *_str, _Bool caseSensitive);
+int **checkMatches(match **matches);
+char **strcut(char *str, char _char);
+_Bool sizedCmpNC(const char *str, const char *str_, int init, int final);
+
+/* ###################################################################################
+ *                                 STRINGS HANDLERS </>
+ * ###################################################################################
+ */
+
+/* ###################################################################################
+ *                                 UTILITIES
+ * ###################################################################################
+ */
+
 int detect(int line, const char func[]);
 void clearBuffer();
 
-/**
- * @param getIns In this section you have to pass the address of a pointer with no memory allocated that points to NULL.
- * @param DIM This is the maximum dimension of the input that you are going to receive from the user.
- * @param fixedDim Here you can specify if the dimension is fixed or the input can have a lower dimension.
- * @param conditions This is the parameter where you have to specify the conditions of an acceptable input.
- * @param message This is the message that would be shown to the user when he has to give the input.
- *
- * @return This function has no return but it modify the pointer that you passed in the first parameter slot and gives you\n
- * the input of the user.
+/* ###################################################################################
+ *                                 UTILITIES
+ * ###################################################################################
  */
-void input(char **getins, int DIM, _Bool fixedDim, const char conditions[], const char message[]);
-_Bool sString (char **getIns, const char *cmds);
-_Bool ccLess_Comparison(const char string[], const char string_[]);
-void freeIt(char **var);
-match *contains(char *_chars, char *_str, _Bool caseSensitive);
-int **checkMatches(match **matches);
-char *numToString(int num);
-char *charToString(char _char);
-void bubbleSortInt(int **array, int dimension);
-char **strcut(char *str, char _char);
 
 #endif //C_HELP_2_0_STRINGHANDLER_H

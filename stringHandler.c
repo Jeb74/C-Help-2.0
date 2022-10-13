@@ -28,7 +28,7 @@ int numConverter(const char num) {
     else return 0;
 }
 
-int xtdNumConverter(const char nums[] , _Bool skipchars) {
+int toInteger(const char nums[] , _Bool skipchars) {
     int cnum = 0;
     if (!skipchars) {
         for (int i = 0; checkIfNumber(nums[i]); i++) {
@@ -515,6 +515,7 @@ void input(char **getIns, const int DIM, const _Bool fixedDim, const char condit
     if (conditions != NULL && conditions[0] != 0) {
         evaluateSyntax(conditions);
     }
+    if (*getIns != NULL) freeIt(getIns);
     do {
         fprintf(stdout, message);
         valid = getInsertion(getIns, DIM, fixedDim, conditions);
@@ -649,13 +650,13 @@ char *charToString(const char _char) {
     return str;
 }
 
-void bubbleSortInt(int **array, int dimension) {
+void bubbleSortInt(int *array, int dimension) {
     for (int i = 0; i < dimension - 1; i++) {
         for (int j = 0, tmp; j < dimension - i - 1; j++) {
-            if ((*array)[j] > (*array)[j+1]) {
-                tmp = (*array)[j];
-                (*array)[j] = (*array)[j+1];
-                (*array)[j+1] = tmp;
+            if (array[j] > array[j+1]) {
+                tmp = array[j];
+                array[j] = array[j+1];
+                array[j+1] = tmp;
             }
         }
     }
