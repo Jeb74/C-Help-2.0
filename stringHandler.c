@@ -1,30 +1,46 @@
-#include "../testsCHELP/chelps.h"
+#include "Headers/stringHandler.h"
 
 /* ###################################################################################
  * CHAR CONVERTERS TO NUMBERS FUNCTIONS
  * ###################################################################################
  */
 
-int numchecker(const char num) {
+static _Bool checkIfSpecial(const char _char) {
+    return (_char == '!'
+            || _char == '.'
+            || _char == '('
+            || _char == ')'
+            || _char == '|'
+            || _char == '-'
+            || _char == '>'
+            || _char == '^'
+    );
+}
+
+static _Bool checkIfNumber(const char _char) {
+    return (_char >= '0' && _char <= '9');
+}
+
+int numConverter(const char num) {
     if (num >= '0' && num <= '9') {
         return (int)num-48;
     }
     else return 0;
 }
 
-int xtdnumchecker(const char nums[] , _Bool skipchars) {
+int toInteger(const char nums[] , _Bool skipchars) {
     int cnum = 0;
-    if (skipchars == false) {
-        for (int i = 0; nums[i] >= '0' && nums[i] <= '9'; i++) {
-            if (cnum == 0) cnum = numchecker(nums[i]);
-            else cnum = cnum * 10 + numchecker(nums[i]);
+    if (!skipchars) {
+        for (int i = 0; checkIfNumber(nums[i]); i++) {
+            if (cnum == 0) cnum = numConverter(nums[i]);
+            else cnum = cnum * 10 + numConverter(nums[i]);
         }
     }
     else {
         for (int j = 0; j < (int)strlen(nums); j++) {
-            for (int i = j; nums[i] >= '0' && nums[i] <= '9'; i++) {
-                if (cnum == 0) cnum = numchecker(nums[i]);
-                else cnum = cnum * 10 + numchecker(nums[i]);
+            for (int i = j; checkIfNumber(nums[i]); i++) {
+                if (cnum == 0) cnum = numConverter(nums[i]);
+                else cnum = cnum * 10 + numConverter(nums[i]);
                 j = i;
             }
         }
@@ -44,16 +60,73 @@ int detect(const int line, const char func[]) {
     return call_id;
 }
 
-static cl *setElement(cl *element, data data, type type) {
+static cl *getListTop(cl *list) {
+    cl *top = list;
+    while ((*top).prev != NULL) {
+        top = top->prev;
+    }
+    return top;
+}
+
+static cl *getPositionInList(cl *list, cl *element, ListCoords *tbm) {
+    switch(element->type) {
+        case n_char_t:
+        case n_int_t:
+        case n_list_t: {
+            if (list->type < n_char_t || list->type > n_list_t) {
+                *tbm = TOP;
+                return list;
+            }
+            else {
+                while(list->next != NULL && list->next->type >= n_char_t && list->next->type <= n_list_t) {
+                    list = list->next;
+                }
+                if (list->next == NULL) *tbm = BOTTOM;
+                else *tbm = MIDDLE;
+                return list;
+            }
+        }
+            break;
+        default: {
+            while(list->next != NULL) list = list->next;
+            *tbm = BOTTOM;
+            return list;
+        }
+    }
+}
+
+static cl *sortCList(cl *list, cl *element) {
+    if (list == NULL) return element;
+    ListCoords tbm;
+    cl *tmp = getPositionInList(list, element, &tbm);
+    switch(tbm) {
+        case TOP: {
+            tmp->prev = element;
+            element->next = tmp;
+        }
+            break;
+        case MIDDLE: {
+            element->next = tmp->next;
+            tmp->next = element;
+            element->prev = tmp;
+            element->next->prev = element;
+        }
+            break;
+        case BOTTOM: {
+            tmp->next = element;
+            element->prev = tmp;
+        }
+    }
+    return getListTop(list);
+}
+
+static cl *setElement(cl *list, data data, type type) {
     cl *tmp = (cl*) calloc(1, sizeof(cl));
-    (*tmp).prev = element;
+    (*tmp).prev = NULL;
     (*tmp).data = data;
     (*tmp).type = type;
     (*tmp).next = NULL;
-    if (element != NULL) {
-        (*element).next = tmp;
-    }
-    return tmp;
+    return sortCList(list, tmp);
 }
 
 static cl *getElement(cl *list, _Bool reset) {
@@ -64,15 +137,8 @@ static cl *getElement(cl *list, _Bool reset) {
     return ptr;
 }
 
-static cl *getListTop(cl *list) {
-    cl *top = list;
-    while ((*top).prev != NULL) {
-        top = top->prev;
-    }
-    return top;
-}
-
 static void *freeList(cl *list) {
+    if (!list) return NULL;
     while((*list).next != NULL) {
         list = (*list).next;
     }
@@ -87,49 +153,6 @@ static void *freeList(cl *list) {
     }
     free(tmp);
     freeList(list);
-}
-
-static int getInsertion(char **getIns, int DIM, const _Bool fixedDim, const char message[]) {
-    int actualDim;
-    _Bool valid = false;
-    while (!valid) {
-        if (message != NULL) printf("%s", message);
-        if (*getIns == NULL) *getIns = (char*) calloc(DIM, sizeof(char));
-        scanf("%[^\n]s", *getIns);
-        getchar();
-        (*getIns)[DIM-1] = '\0';
-        if ((*getIns)[0] != '\0'){
-            if (strlen(*getIns) < DIM && !fixedDim) {
-                *getIns = (char *) realloc(*getIns, (strlen(*getIns) + 1) * sizeof(char));
-                actualDim = (int)strlen(*getIns);
-                (*getIns)[actualDim] = '\0';
-                valid = true;
-            } else if (strlen(*getIns) == (DIM) - 1) {
-                actualDim = DIM - 1;
-                (*getIns)[actualDim] = '\0';
-                valid = true;
-            } else {
-                freeIt(getIns);
-            }
-        }
-    }
-    return actualDim;
-}
-
-static _Bool checkIfSpecial(const char _char) {
-    return (_char == '!'
-            || _char == '.'
-            || _char == '('
-            || _char == ')'
-            || _char == '|'
-            || _char == '-'
-            || _char == '>'
-            || _char == '^'
-    );
-}
-
-static _Bool checkIfNumber(const char _char) {
-    return (_char >= '0' && _char <= '9');
 }
 
 /*
@@ -164,9 +187,9 @@ static void regexIntegers(cl **list, const char conditions[], int *pos, _Bool ne
     for (int i = *pos; conditions[i] != ')'; i++) {
         for (int j = i; checkIfNumber(conditions[j]); j++){
             if (data._n == 0) {
-                data._n = numchecker(conditions[j]);
+                data._n = numConverter(conditions[j]);
             } else {
-                data._n = data._n * 10 + numchecker(conditions[j]);
+                data._n = data._n * 10 + numConverter(conditions[j]);
             }
             type = int_t;
             if (negated) type = n_int_t;
@@ -184,7 +207,7 @@ static void regexIntegers(cl **list, const char conditions[], int *pos, _Bool ne
     }
 }
 
-static void regexCompiler(cl **list, const char conditions[]) {
+static bool *regexCompiler(cl **list, const char conditions[], bool condition_types[SAFEDIM]) {
     _Bool negated = false;
     data data;
     type type;
@@ -199,6 +222,7 @@ static void regexCompiler(cl **list, const char conditions[]) {
         }
         i++;
         if (conditions[i] == '.') {
+            condition_types[1] = true;
             for (int j = i+2, ignoreSymbol = 0; true; j++) {
                 if (conditions[j] == ')' && !ignoreSymbol) {
                     i = j;
@@ -214,9 +238,11 @@ static void regexCompiler(cl **list, const char conditions[]) {
             }
         }
         else if (checkIfNumber(conditions[i])) {
+            condition_types[0] = true;
             regexIntegers(&(*list), conditions, &i, negated);
         }
         else {
+            condition_types[1] = true;
             regexChars(&(*list), conditions, &i, negated);
         }
         if (negated) negated = false;
@@ -318,142 +344,187 @@ static void evaluateSyntax(const char conditions[]) {
     }
 }
 
-static void negativeConditions(cl *list, cl **listPointer, const char *getIns, _Bool *validity) {
-    type type = (**listPointer).type;
-    _Bool invertedValidity = true;
-    int num = 0;
-    int position = -1;
-    for (int i = 0; i < strlen(getIns) && invertedValidity; i++) {
-        while (invertedValidity && (*listPointer) != NULL) {
-            type = (**listPointer).type;
-            switch (type) {
-                case n_int_t: {
-                    if (checkIfNumber(getIns[i]) && i > position) {
-                        for (int j = i; checkIfNumber(getIns[j]); j++) {
-                            if (num == 0) num = numchecker(getIns[j]);
-                            else num = num * 10 + numchecker(getIns[j]);
-                            position = j;
-                        }
-                        cl *tmp = getElement(list, false);
-                        invertedValidity = !((**listPointer).data._n <= num && num <= (*tmp).data._n);
-                    }
-                }
-                    break;
-                case n_char_t: {
-                    cl *tmp = getElement(list, false);
-                    invertedValidity = !((**listPointer).data._c <= getIns[i] && getIns[i] <= (*tmp).data._c);
-                }
-                    break;
-                case n_list_t: {
-                    invertedValidity = ((**listPointer).data._c != getIns[i]);
-                }
-                    break;
-                default: break;
-            }
-            *listPointer = getElement(list, false);
-        }
-        *listPointer = getElement(list, true);
-        *listPointer = getElement(list, false);
-    }
-    if (!invertedValidity) *validity = invertedValidity;
-    *listPointer = getElement(list, true);
-}
-
-static _Bool checkPositiveConditions(cl *list) {
+static _Bool checkNumbers(cl *list) {
     cl *tmp = list;
-    if (tmp->type <= 2 || tmp->type == unlimited) return true;
+    if (tmp->type == unlimited || tmp->type == int_t || tmp->type == n_int_t) return true;
     if (tmp->next == NULL) return false;
-    return checkPositiveConditions(tmp->next);
+    return checkNumbers(tmp->next);
 }
 
-static _Bool evaluateInsertion(const char *getIns, const int DIM,  const char conditions[], int caller) {
-    static int lastCaller = 0;
-    static cl *list = NULL;
-    if (caller != lastCaller && conditions != NULL) {
-        if (list != NULL) freeList(list);
-        list = NULL;
-        regexCompiler(&list, conditions);
+static unsigned int hashThis(const char string[]) {
+    unsigned int hash = 0;
+    for (unsigned int i = 0; i < strlen(string); i++) {
+        if (!checkIfSpecial(string[i]) || i && string[i-1] == '^') hash += (string[i] * (i+1));
     }
-    if (conditions == NULL) {
-        freeList(list);
-        return true;
-    }
-    lastCaller = caller;
-    _Bool validity = true;
-    cl *listPointer = getElement(list, false);
-    negativeConditions(list, &listPointer, getIns, &validity);
-    if (listPointer == NULL) listPointer = getElement(list, false);
-    bool positive = checkPositiveConditions(list);
-    for (int i = 0; i < DIM && validity && positive; i++) {
-        do {
-            validity = false;
-            if (listPointer == NULL) listPointer = getElement(list, false);
-            type type = (*listPointer).type;
-            switch(type) {
-                case char_t: {
-                    cl *tmp = getElement(list, false);
-                    validity = ((*listPointer).data._c <= getIns[i] && getIns[i] <=(*tmp).data._c);
+    return hash;
+}
+
+static void charValidation(cl *list, char val, ValidationRegister *reg) {
+    reg->negative = false;
+    reg->positive = false;
+    reg->typeVal = NOT_MATCHED;
+    getElement(list, true);
+    do {
+        list = getElement(list, false);
+        if (list->type < n_char_t || list->type > n_list_t) reg->negative = true;
+        switch(list->type) {
+            case n_char_t: {
+                cl *tmp2 = getElement(list, false);
+                if (val >= list->data._c && val <= tmp2->data._c) {
+                    reg->typeVal = MATCHED;
+                    return;
                 }
-                    break;
-                case int_t:
-                case unlimited: {
-                    int num = -1;
-                    for (int j = i; '0' <= getIns[j] && getIns[j] <= '9'; j++) {
-                        if (num == -1) num = numchecker(getIns[j]);
-                        else num = num * 10 + numchecker(getIns[j]);
-                        i = j;
-                    }
-                    if (type == int_t) {
-                        cl *tmp = getElement(list, false);
-                        validity = ((*listPointer).data._n <= num && num <= (*tmp).data._n);
-                    }
-                    else {
-                        validity = ((*listPointer).data._n <= num && num != -1);
-                    }
-                }
-                    break;
-                case list_t: {
-                    while ((*listPointer).type == list_t && (*listPointer).type == type) {
-                        validity = ((*listPointer).data._c == getIns[i]);
-                        if (validity) break;
-                        listPointer = getElement(list, false);
-                        if (listPointer == NULL) break;
-                    }
-                }
-                    break;
-                default: break;
+                list = tmp2;
             }
-            if (listPointer != NULL && type != list_t) listPointer = getElement(list, false);
-        } while (listPointer != NULL && !validity);
-        listPointer = getElement(list, true);
-    }
-    listPointer = getElement(list, true);
-    return validity;
+                break;
+            case n_list_t: {
+                if (val == list->data._c) {
+                    reg->typeVal = MATCHED;
+                    return;
+                }
+            }
+                break;
+            case char_t: {
+                cl *tmp2 = getElement(list, false);
+                if (val >= list->data._c && val <= tmp2->data._c) {
+                    reg->typeVal = MATCHED;
+                    return;
+                }
+                list = tmp2;
+            }
+                break;
+            case list_t: {
+                if (val == list->data._c) {
+                    reg->typeVal = MATCHED;
+                    return;
+                }
+            }
+        }
+    } while(list->next != NULL);
+    reg->positive = true;
 }
 
-void cString(char **getIns, int DIM, _Bool fixedDim, const char conditions[], const char message[], const int caller) {
-    if (conditions != NULL && conditions[0] != 0 && !word_comparison(conditions, "reset")) {
+static void intValidation(cl *list, int val, ValidationRegister *reg) {
+    reg->negative = false;
+    reg->positive = false;
+    reg->typeVal = NOT_MATCHED;
+    getElement(list, true);
+    do {
+        list = getElement(list, false);
+        if (list->type < n_char_t || list->type > n_list_t) reg->negative = true;
+        switch(list->type) {
+            case n_int_t: {
+                cl *tmp2 = getElement(list, false);
+                if (val >= list->data._n && val <= tmp2->data._n) {
+                    reg->typeVal = MATCHED;
+                    return;
+                }
+                list = tmp2;
+            }
+                break;
+            case int_t: {
+                cl *tmp2 = getElement(list, false);
+                if (val >= list->data._n && val <= tmp2->data._n) {
+                    reg->typeVal = MATCHED;
+                    return;
+                }
+                list = tmp2;
+            }
+                break;
+            case unlimited: {
+                if (val >= list->data._n) {
+                    reg->typeVal = MATCHED;
+                    return;
+                }
+            }
+        }
+    } while(list->next);
+    reg->positive = true;
+}
+
+static void checkValidity(const int val, const type type, cl *list, ValidationRegister *reg) {
+    switch (type) {
+        case int_t: return intValidation(list, val, reg);
+        case char_t: return charValidation(list, (char)val, reg);
+        default:;
+    }
+}
+
+static bool getInsertion(char **getIns, const int DIM, const _Bool fixedDim, const char conditions[]) {
+    int start = 1;
+    static int code = 0;
+    static cl *list = NULL;
+                                    //  numbers  -  chars
+    static bool condition_types[SAFEDIM] = {false, false};
+    *getIns = xtdynmem(char, start);
+    int ipo = (int)hashThis(conditions);
+    if (code != ipo) {
+        list = freeList(list);
+        regexCompiler(&list, conditions, condition_types);
+        code = ipo;
+    }
+    ipo = 0;
+
+    // CHECKING CHARS
+    bool building = false;
+    char _char = '\0';
+    while (_char != '\n') {
+        ValidationRegister reg;
+        _char = (char)getchar();
+        bool isNumber = checkIfNumber(_char);
+        if (isNumber && condition_types[0]) {
+            building = true;
+            ipo *= 10;
+            ipo += numConverter(_char);
+        }
+
+        if (_char != '\n') {
+            checkValidity(_char, char_t, getListTop(list), &reg);
+            if (!reg.negative && reg.typeVal == MATCHED) return false;
+            if (reg.negative && reg.positive && reg.typeVal == NOT_MATCHED) {
+                if (!building || !isNumber) return false;
+            }
+        }
+
+        if (!isNumber && building) {
+            building = false;
+            checkValidity(ipo, int_t, getListTop(list), &reg);
+            if (!reg.negative && reg.typeVal == MATCHED) return false;
+            if (reg.negative && reg.positive && reg.typeVal == NOT_MATCHED) return false;
+        }
+
+
+        if (_char != '\n') {
+            (*getIns)[start-1] = _char;
+            start++;
+            *getIns = (char*) realloc((*getIns), start*sizeof(char));
+        }
+    }
+    (*getIns)[--start] = '\0';
+    if (!start) return false;
+    // MATCHING DIMENSION
+    if (start < DIM && !fixedDim || start == DIM) return true;
+    else return false;
+}
+
+void clearBuffer() {
+    while(getchar() != '\n');
+}
+
+void input(char **getIns, const int DIM, const _Bool fixedDim, const char conditions[], const char message[]) {
+    bool valid;
+    if (conditions != NULL && conditions[0] != 0) {
         evaluateSyntax(conditions);
     }
-    else if (word_comparison(conditions, "reset")) {
-        evaluateInsertion(NULL, 0, NULL, caller);
-        return;
-    }
-    DIM++;
-    static int lastCaller = 0;
-    if (*getIns != NULL) freeIt(&(*getIns));
-    if (caller != lastCaller) {
-        *getIns = (char *) calloc(DIM, sizeof(char));
-    }
-    _Bool breaks = false;
-    while (!breaks) {
-        int actualDim = 0;
-        if (!word_comparison(conditions, "reset")) {
-            actualDim = getInsertion(getIns, DIM, fixedDim, message);
+    if (*getIns != NULL) freeIt(getIns);
+    do {
+        fprintf(stdout, message);
+        valid = getInsertion(getIns, DIM, fixedDim, conditions);
+        if (strlen(*getIns) != (ftell(stdin) - 2) && !valid) {
+            clearBuffer();
+            free(*getIns);
         }
-        if (evaluateInsertion(*getIns, actualDim, conditions, caller)) breaks = true;
-        else freeIt(&(*getIns));
-    }
+    } while(!valid);
 }
 
 void freeIt(char **var) {
@@ -461,9 +532,9 @@ void freeIt(char **var) {
     *var = NULL;
 }
 
-_Bool word_comparison(const char string[], const char string_[]) {
+_Bool strComp(const char string[], const char string_[]) {
     if (strlen(string) != strlen(string_)) return false;
-    for (int i = 0; string[i] >= ' ' && string_[i] >= ' ' && string[i] <= 'z' && string_[i] <= 'z'; i++) {
+    for (int i = 0; string[i] && string_[i]; i++) {
         if ((string[i] != string_[i])) return false;
     }
     return true;
@@ -566,7 +637,7 @@ char *numToString(int num) {
         for (int i = dim; dim != 0 && i > -1; i--) {
             numb[i] = numb[i - 1];
         }
-        numb[0] = (num % 10) + 48;
+        numb[0] = (char)((num % 10) + 48);
         num /= 10;
         dim++;
     }
@@ -580,13 +651,13 @@ char *charToString(const char _char) {
     return str;
 }
 
-void bubbleSortInt(int **array, int dimension) {
+void bubbleSortInt(int *array, int dimension) {
     for (int i = 0; i < dimension - 1; i++) {
         for (int j = 0, tmp; j < dimension - i - 1; j++) {
-            if ((*array)[j] > (*array)[j+1]) {
-                tmp = (*array)[j];
-                (*array)[j] = (*array)[j+1];
-                (*array)[j+1] = tmp;
+            if (array[j] > array[j+1]) {
+                tmp = array[j];
+                array[j] = array[j+1];
+                array[j+1] = tmp;
             }
         }
     }
@@ -603,7 +674,7 @@ char **strcut(char *str, char _char) {
         }
     }
     if (!countChars) return NULL;
-    char **result = xtdynmem(char*, countChars+MINDIM);
+    char **result = xtdynmem(char*, countChars+SAFEDIM);
     for (int i = 0; i < countChars; i++) {
         result[i] = (i != 0) ? xtdynmem(char, cPos[i] - cPos[i-1] + 1) : xtdynmem(char, cPos[i] + 1);
         for (int j = (i == 0) ? 0 : cPos[i-1] + 1; j < cPos[i]; j++) {
