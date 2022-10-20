@@ -450,7 +450,7 @@ static void checkValidity(const int val, const type type, cl *list, ValidationRe
     }
 }
 
-static bool getInsertion(char **getIns, int DIM, const _Bool fixedDim, const char conditions[]) {
+static bool getInsertion(char **getIns, const int DIM, const _Bool fixedDim, const char conditions[]) {
     int start = 1;
     static int code = 0;
     static cl *list = NULL;
@@ -500,9 +500,10 @@ static bool getInsertion(char **getIns, int DIM, const _Bool fixedDim, const cha
             *getIns = (char*) realloc((*getIns), start*sizeof(char));
         }
     }
-    (*getIns)[start-1] = '\0';
+    (*getIns)[--start] = '\0';
+    if (!start) return false;
     // MATCHING DIMENSION
-    if (strlen(*getIns) < DIM && !fixedDim || strlen(*getIns) == DIM) return true;
+    if (start < DIM && !fixedDim || start == DIM) return true;
     else return false;
 }
 
