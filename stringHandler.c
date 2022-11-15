@@ -451,14 +451,15 @@ static void checkValidity(const int val, const type type, cl *list, ValidationRe
 }
 
 static bool getInsertion(char **getIns, const int DIM, const _Bool fixedDim, const char conditions[]) {
-    int start = 1;
-    static int code = 0;
-    static cl *list = NULL;
+    int start = 1; // dimensione iniziale dell'input (minimo 1 carattere)
+    static int code = 0; // codice identificativo della lista di condizioni precedente.
+    static cl *list = NULL; // lista di condizioni.
+    
                                     //  numbers  -  chars
-    static bool condition_types[SAFEDIM] = {false, false};
-    *getIns = xtdynmem(char, start);
-    int ipo = (int)hashThis(conditions);
-    if (code != ipo) {
+    static bool condition_types[SAFEDIM] = {false, false}; // array per il check del tipo di condizioni presenti.
+    *getIns = xtdynmem(char, start); // alloco la memoria iniziale per l'inserimento.
+    int ipo = (int)hashThis(conditions); // effettuo l'hashing delle condizioni inserite e ne ottengo il codice attuale.
+    if (code != ipo) { // se il codice è diverso dal precedente allora libero la lista di condizioni precedenti e la ricalcolo.
         list = freeList(list);
         regexCompiler(&list, conditions, condition_types);
         code = ipo;
@@ -469,7 +470,7 @@ static bool getInsertion(char **getIns, const int DIM, const _Bool fixedDim, con
     bool building = false;
     char _char = '\0';
     while (_char != '\n') {
-        ValidationRegister reg;
+        ValidationRegister reg; // creo un registro per definire lo stato di validità del valore che viene processato.
         _char = (char)getchar();
         bool isNumber = checkIfNumber(_char);
         if (isNumber && condition_types[0]) {
@@ -514,13 +515,16 @@ void clearBuffer() {
 void input(char **getIns, const int DIM, const _Bool fixedDim, const char conditions[], const char message[]) {
     bool valid;
     if (conditions != NULL && conditions[0] != 0) {
-        evaluateSyntax(conditions);
+        evaluateSyntax(conditions); // Controllo che la sintassi dell'espressione regolare sia corretta, 
+        // in caso contrario esce dal programma con un exit code specifico.
     }
-    if (*getIns != NULL) freeIt(getIns);
+    if (*getIns != NULL) freeIt(getIns); // Verifico che il puntatore da allocare passato come parametro sia vuoto, in caso contrario lo libero.
     do {
-        fprintf(stdout, message);
-        valid = getInsertion(getIns, DIM, fixedDim, conditions);
-        if (strlen(*getIns) != (ftell(stdin) - 2) && !valid) {
+        fprintf(stdout, message); // Stampo il messaggio specificato come avviso di input
+        valid = getInsertion(getIns, DIM, fixedDim, conditions); // Ottengo l'inserimento e ne verifico la validità.
+        if (strlen(*getIns) != (ftell(stdin) - 2) && !valid) { // in caso l'inserimento non sia valido perchè troppo lungo o perchè è stato inserito un carattere
+            // non abilitato, e quindi il processo di lettura è terminato prematuramente allora effettuo un clear del buffer principale
+            // e libero la memoria allocata fino ad ora.
             clearBuffer();
             free(*getIns);
         }
